@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LocalHub | 지역 정보</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Noto+Sans+KR:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      :root {
+        --mint-50: #f4fdfb;
+        --mint-100: #dbf5ee;
+        --mint-200: #bfeee5;
+        --mint-400: #79d2bf;
+        --mint-500: #47bfa6;
+        --mint-700: #2d8e7d;
+        --ink-700: #25433d;
+        --ink-500: #5d7570;
+        --white: #ffffff;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Noto Sans KR", sans-serif;
+        background: linear-gradient(135deg, var(--mint-50), #ffffff 70%);
+        color: var(--ink-700);
+      }
+
+      a {
+        text-decoration: none;
+        color: inherit;
+      }
+
+      button {
+        font: inherit;
+        cursor: pointer;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 24px;
+      }
+
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0 24px;
+      }
+
+      .brand {
+        font-family: "Poppins", sans-serif;
+        font-size: 1.45rem;
+        font-weight: 800;
+        color: var(--mint-700);
+        letter-spacing: -0.03em;
+      }
+
+      .nav-links {
+        display: flex;
+        gap: 16px;
+        font-weight: 700;
+        color: var(--ink-500);
+      }
+
+      .nav-links a:hover {
+        color: var(--mint-700);
+      }
+
+      .page-title {
+        margin: 0 0 12px;
+        font-size: 2rem;
+        font-weight: 800;
+      }
+
+      .page-subtitle {
+        margin: 0 0 26px;
+        color: var(--ink-500);
+        line-height: 1.7;
+      }
+
+      .tab-switcher {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 24px;
+      }
+
+      .tab-button {
+        border: 1px solid var(--mint-200);
+        background: var(--white);
+        color: var(--ink-500);
+        border-radius: 999px;
+        padding: 10px 16px;
+        font-weight: 700;
+      }
+
+      .tab-button.active {
+        background: var(--mint-500);
+        color: white;
+        border-color: var(--mint-500);
+      }
+
+      .search-card {
+        background: var(--white);
+        border: 1px solid var(--mint-100);
+        border-radius: 24px;
+        padding: 24px;
+        box-shadow: 0 12px 28px rgba(35, 67, 61, 0.08);
+        margin-bottom: 24px;
+      }
+
+      .search-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 12px;
+      }
+
+      .search-row input {
+        width: 100%;
+        border: 1px solid var(--mint-200);
+        border-radius: 999px;
+        padding: 14px 18px;
+        font-size: 1rem;
+        color: var(--ink-700);
+      }
+
+      .search-row button {
+        border: none;
+        border-radius: 999px;
+        background: var(--mint-500);
+        color: white;
+        padding: 14px 24px;
+        font-weight: 700;
+      }
+
+      .result-list {
+        display: grid;
+        gap: 16px;
+      }
+
+      .result-card {
+        display: grid;
+        grid-template-columns: 260px 1fr;
+        gap: 20px;
+        background: var(--white);
+        border: 1px solid var(--mint-100);
+        border-radius: 20px;
+        padding: 20px;
+        box-shadow: 0 8px 24px rgba(35, 67, 61, 0.05);
+        align-items: start;
+      }
+
+      .result-card.no-image {
+        grid-template-columns: 1fr;
+      }
+
+      .result-card img {
+        width: 100%;
+        height: 220px;
+        object-fit: cover;
+        border-radius: 16px;
+        background: #f4f5f5;
+      }
+
+      .result-card h3 {
+        margin: 0 0 10px;
+      }
+
+      .result-card p {
+        margin: 0 0 14px;
+        color: var(--ink-500);
+        line-height: 1.7;
+      }
+
+      .result-meta {
+        margin-top: 12px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .meta-pill {
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: var(--mint-50);
+        color: var(--mint-700);
+        font-size: 0.9rem;
+        font-weight: 700;
+      }
+
+      .detail-row {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 14px;
+      }
+
+      .detail-item {
+        color: var(--ink-500);
+        font-size: 0.95rem;
+      }
+
+      .detail-label {
+        font-weight: 700;
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+        border-radius: 20px;
+        background: var(--mint-50);
+        color: var(--ink-500);
+      }
+
+      @media (max-width: 900px) {
+        .search-row {
+          grid-template-columns: 1fr;
+        }
+
+        .result-card {
+          grid-template-columns: 1fr;
+        }
+
+        .detail-row {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="app">
+      <div class="container">
+        <header class="topbar">
+          <a class="brand" href="Front_end.html">LocalHub</a>
+          <nav class="nav-links">
+            <a href="Front_end.html">홈</a>
+            <a href="Front_information.html">지역정보</a>
+            <a href="Front_map_tab.html">지도</a>
+            <a href="Front_community.html">커뮤니티</a>
+          </nav>
+        </header>
+
+        <section>
+          <h1 class="page-title">지역정보</h1>
+          <p class="page-subtitle">
+            한국관광공사 TourAPI 데이터를 기반으로 한 지역 정보 검색 및 카테고리별 필터를 제공합니다.
+          </p>
+
+          <div class="tab-switcher">
+            <button type="button" class="tab-button" :class="{ active: activeTab === 'all' }" @click="activeTab = 'all'">전체</button>
+            <button type="button" class="tab-button" :class="{ active: activeTab === 'tour' }" @click="activeTab = 'tour'">관광지</button>
+            <button type="button" class="tab-button" :class="{ active: activeTab === 'culture' }" @click="activeTab = 'culture'">문화시설</button>
+            <button type="button" class="tab-button" :class="{ active: activeTab === 'festival' }" @click="activeTab = 'festival'">축제공연행사</button>
+            <button type="button" class="tab-button" :class="{ active: activeTab === 'course' }" @click="activeTab = 'course'">여행코스</button>
+            <button type="button" class="tab-button" :class="{ active: activeTab === 'leports' }" @click="activeTab = 'leports'">레포츠</button>
+            <button type="button" class="tab-button" :class="{ active: activeTab === 'stay' }" @click="activeTab = 'stay'">숙박</button>
+            <button type="button" class="tab-button" :class="{ active: activeTab === 'shopping' }" @click="activeTab = 'shopping'">쇼핑</button>
+            <button type="button" class="tab-button" :class="{ active: activeTab === 'food' }" @click="activeTab = 'food'">음식점</button>
+          </div>
+
+          <div class="search-card">
+            <div class="search-row">
+              <input
+                type="text"
+                v-model="searchQuery"
+                placeholder="장소명 · 주소 검색"
+                @keyup.enter="applySearch"
+              />
+              <button type="button" @click="applySearch">검색</button>
+            </div>
+          </div>
+
+          <div class="result-list">
+            <div v-if="filteredResults.length === 0" class="empty-state">
+              검색 결과가 없습니다. 다른 키워드나 카테고리로 다시 시도해보세요.
+            </div>
+
+            <div
+              class="result-card"
+              :class="{ 'no-image': !item.image }"
+              v-for="item in filteredResults"
+              :key="item.id"
+            >
+              <template v-if="item.image">
+                <img :src="item.image" :alt="item.title" />
+              </template>
+
+              <div>
+                <h3>{{ item.title }}</h3>
+                <p>{{ item.description }}</p>
+
+                <div class="result-meta">
+                  <span class="meta-pill">{{ item.categoryLabel }}</span>
+                  <span class="meta-pill">{{ item.location }}</span>
+                </div>
+
+                <div class="detail-row">
+                  <div class="detail-item">
+                    <span class="detail-label">주소</span>
+                    {{ item.location }}
+                  </div>
+                  <div class="detail-item">
+                    <span class="detail-label">전화</span>
+                    {{ item.tel || "정보 없음" }}
+                  </div>
+                  <div class="detail-item">
+                    <span class="detail-label">우편번호</span>
+                    {{ item.zipcode || "정보 없음" }}
+                  </div>
+                  <div class="detail-item" v-if="item.mapx && item.mapy">
+                    <span class="detail-label">지도 좌표</span>
+                    {{ item.mapx }}, {{ item.mapy }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script>
+      const { createApp } = Vue;
+      const API_BASE_URL = "https://backendserver-tuvk.onrender.com";
+
+      createApp({
+        data() {
+          return {
+            activeTab: "all",
+            searchQuery: "",
+            appliedQuery: "",
+            results: []
+          };
+        },
+        async mounted() {
+          try {
+            const response = await fetch(`${API_BASE_URL}/json-items?limit=200&offset=0`);
+            if (!response.ok) throw new Error("서버에서 올바른 응답을 받지 못했습니다.");
+
+            const data = await response.json();
+            const items = Array.isArray(data) ? data : data.items || [];
+            this.results = items.map((location) => ({
+              id:
+                location.contentid ??
+                location.id ??
+                location.location_id ??
+                location._id ??
+                Math.random().toString(36).slice(2, 10),
+              title: location.title ?? location.name ?? "제목 없음",
+              description:
+                location.overview ??
+                location.description ??
+                location.addr1 ??
+                location.addr2 ??
+                "상세 설명이 없습니다.",
+              image:
+                location.firstimage ??
+                location.firstimage2 ??
+                location.image ??
+                location.thumbnail ??
+                "",
+              category: this.mapCategoryToEng(location.contenttypeid ?? location.cat1 ?? location.category_name),
+              categoryLabel:
+                location.category_name ??
+                this.mapContentTypeId(location.contenttypeid) ??
+                "기타",
+              location: location.addr1 ?? location.address ?? location.addr2 ?? "주소 정보 없음",
+              tel: location.tel ?? "",
+              zipcode: location.zipcode ?? "",
+              mapx: location.mapx ?? location.lng ?? location.lon ?? "",
+              mapy: location.mapy ?? location.lat ?? ""
+            }));
+
+            console.log("지역정보 백엔드 데이터 연동 성공!");
+          } catch (error) {
+            console.warn("백엔드 연동에 실패하여 더미 데이터를 표시합니다.", error);
+            this.setFallbackDummyData();
+          }
+        },
+        computed: {
+          filteredResults() {
+            return this.results.filter((item) => {
+              const matchesCategory =
+                this.activeTab === "all" || item.category === this.activeTab;
+
+              const keyword = this.appliedQuery.trim().toLowerCase();
+              const titleMatch = item.title ? item.title.toLowerCase().includes(keyword) : false;
+              const descMatch = item.description ? item.description.toLowerCase().includes(keyword) : false;
+              const locMatch = item.location ? item.location.toLowerCase().includes(keyword) : false;
+
+              const matchesSearch = keyword === "" || titleMatch || descMatch || locMatch;
+
+              return matchesCategory && matchesSearch;
+            });
+          }
+        },
+        methods: {
+          applySearch() {
+            this.appliedQuery = this.searchQuery;
+          },
+          mapCategoryToEng(value) {
+            const map = {
+              관광지: "tour",
+              문화시설: "culture",
+              축제: "festival",
+              축제공연행사: "festival",
+              여행코스: "course",
+              레포츠: "leports",
+              숙박: "stay",
+              쇼핑: "shopping",
+              음식점: "food",
+              12: "tour",
+              14: "tour",
+              15: "culture",
+              28: "festival",
+              32: "leports",
+              38: "shopping",
+              39: "food"
+            };
+            return map[value] || "all";
+          },
+          mapContentTypeId(typeId) {
+            const map = {
+              12: "관광지",
+              14: "관광지",
+              15: "문화시설",
+              28: "축제공연행사",
+              32: "레포츠",
+              38: "쇼핑",
+              39: "음식점"
+            };
+            return map[typeId] || null;
+          },
+          setFallbackDummyData() {
+            this.results = [
+              {
+                id: 1,
+                title: "금오산 도립공원",
+                description: "구미를 대표하는 명산으로 케이블카와 폭포, 산책로를 즐길 수 있습니다.",
+                image: "https://tong.visitkorea.or.kr/cms/resource/08/3032808_image2_1.jpg",
+                category: "tour",
+                categoryLabel: "관광지",
+                location: "경북 구미시 남통동",
+                tel: "",
+                zipcode: "39428",
+                mapx: "128.438086",
+                mapy: "36.114844"
+              },
+              {
+                id: 2,
+                title: "구미 새마을중앙시장",
+                description: "다양한 먹거리와 구미의 정취를 느낄 수 있는 전통시장입니다.",
+                image: "",
+                category: "shopping",
+                categoryLabel: "쇼핑",
+                location: "경북 구미시 원평동",
+                tel: "",
+                zipcode: "",
+                mapx: "",
+                mapy: ""
+              }
+            ];
+          }
+        }
+      }).mount("#app");
+    </script>
+  </body>
+</html>

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LocalHub | 게시물 상세</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet" />
+    <style>
+      :root{--mint-50:#f4fdfb;--mint-100:#dbf5ee;--mint-500:#47bfa6;--ink-700:#25433d;--ink-500:#5d7570;--white:#fff}
+      body{margin:0;font-family:"Noto Sans KR",sans-serif;background:linear-gradient(135deg,var(--mint-50),#fff 70%);color:var(--ink-700);padding:24px}
+      .container{max-width:900px;margin:0 auto}
+      .card{background:var(--white);border:1px solid var(--mint-100);border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 8px 20px rgba(35,67,61,0.04)}
+      .meta{color:var(--ink-500);font-size:0.95rem}
+      .back-btn{display:inline-block;margin-bottom:12px;padding:8px 12px;border-radius:8px;background:#eefaf7;color:var(--mint-500);text-decoration:none;font-weight:700}
+      .comment-form textarea{width:100%;min-height:100px;border:1px solid #e6eef0;border-radius:8px;padding:10px;margin-bottom:8px}
+      .comment-row{display:flex;gap:8px;margin-bottom:12px}
+      .comment-row input{flex:1;padding:8px;border:1px solid #e6eef0;border-radius:8px}
+      .comment-list{display:grid;gap:10px}
+      .comment-item{background:#fafafa;padding:12px;border-radius:8px;border:1px solid #f0f4f4}
+      .comment-meta{font-size:0.85rem;color:var(--ink-500);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+      .btn{background:var(--mint-500);color:#fff;padding:8px 12px;border-radius:8px;border:none;font-weight:700;cursor:pointer}
+      .danger{background:#ff6b6b}
+    </style>
+  </head>
+  <body>
+    <div id="app" class="container">
+      <a class="back-btn" href="Front_community.html">← 목록으로</a>
+
+      <div v-if="post" class="card">
+        <h2>{{ post.title }}</h2>
+        <div class="meta">{{ post.categoryLabel }} · {{ post.date }}</div>
+        <hr style="margin:12px 0" />
+        <div v-html="post.content"></div>
+      </div>
+
+      <div class="card">
+        <h3>댓글 ({{ comments.length }})</h3>
+
+        <div class="comment-list" v-if="comments.length">
+          <div class="comment-item" v-for="c in comments" :key="c.id">
+            <div class="comment-meta">
+              <div>{{ c.name }} · {{ c.date }}</div>
+              <div>
+                <button class="btn danger" @click="tryDeleteComment(c.id)">삭제</button>
+              </div>
+            </div>
+            <div>{{ c.content }}</div>
+          </div>
+        </div>
+
+        <div v-else class="meta" style="margin-bottom:12px">등록된 댓글이 없습니다.</div>
+
+        <hr style="margin:12px 0" />
+
+        <div class="comment-form">
+          <textarea v-model="newComment.content" placeholder="댓글을 입력하세요"></textarea>
+          <div class="comment-row">
+            <input v-model="newComment.name" placeholder="익명" />
+            <input v-model="newComment.password" placeholder="비밀번호 (삭제용)" type="password" />
+            <button class="btn" @click="addComment">등록</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script>
+      const { createApp } = Vue;
+      const API_BASE_URL = "https://backendserver-tuvk.onrender.com";
+
+      createApp({
+        data() {
+          return {
+            postId: null,
+            post: null,
+            comments: [],
+            newComment: { name: "익명", password: "", content: "" }
+          };
+        },
+        mounted() {
+          const params = new URLSearchParams(location.search);
+          this.postId = params.get("post_id");
+          if (!this.postId) return;
+          this.fetchPost();
+          this.loadComments();
+        },
+        methods: {
+          async fetchPost() {
+            try {
+              const res = await fetch(`${API_BASE_URL}/posts/${this.postId}`);
+              if (!res.ok) throw new Error("post not found");
+              const data = await res.json();
+              // category mapping (간단)
+              const catMap = {1:"관광지",2:"음식점",3:"축제",4:"숙박",5:"쇼핑",6:"문화시설",7:"레포츠",8:"여행코스"};
+              this.post = {
+                id: data.id,
+                title: data.title || "제목 없음",
+                content: data.content || "",
+                categoryLabel: catMap[data.category_id] || "기타",
+                date: data.created_at ? data.created_at.split(" ")[0] : "방금 전"
+              };
+            } catch (e) {
+              console.warn("게시물 로드 실패:", e);
+              this.post = { title: "게시물을 불러올 수 없습니다.", content: "", categoryLabel: "", date: "" };
+            }
+          },
+          loadComments() {
+            try {
+              const key = 'comments_' + this.postId;
+              const raw = localStorage.getItem(key);
+              this.comments = raw ? JSON.parse(raw) : [];
+              // 최신순: 맨 위가 최신
+              this.comments.sort((a,b)=>b.createdAt - a.createdAt);
+            } catch(e){
+              this.comments = [];
+            }
+          },
+          saveComments() {
+            const key = 'comments_' + this.postId;
+            localStorage.setItem(key, JSON.stringify(this.comments));
+          },
+          addComment() {
+            if (!this.newComment.name.trim()) {
+              alert("닉네임을 입력해주세요.");
+              return;
+            }
+
+            if (!this.newComment.password.trim()) {
+              alert("비밀번호를 입력해주세요.");
+              return;
+            }
+
+              if (!this.newComment.content.trim()) {
+                alert("댓글을 입력해주세요.");
+                return;
+              }
+
+              const item = {
+                id: Date.now(),
+                name: this.newComment.name.trim(),
+                password: this.newComment.password.trim(),
+                content: this.newComment.content.trim(),
+                date: new Date().toLocaleString(),
+                createdAt: Date.now()
+                };
+
+                this.comments.unshift(item);
+                this.saveComments();
+
+                this.newComment = {
+                  name: "",
+                  password: "",
+                  content: ""
+                };
+              },
+          tryDeleteComment(id) {
+            const idx = this.comments.findIndex(c=>c.id===id);
+            if (idx === -1) return;
+            const pwd = prompt("댓글 삭제 비밀번호를 입력하세요");
+            if (pwd === null) return;
+            if (this.comments[idx].password === pwd) {
+              this.comments.splice(idx,1);
+              this.saveComments();
+            } else {
+              alert("비밀번호가 일치하지 않습니다.");
+            }
+          }
+        }
+      }).mount("#app");
+    </script>
+  </body>
+</html>
