@@ -277,6 +277,144 @@
           gap: 10px;
         }
       }
+
+      .post-card.is-active {
+        border-color: var(--mint-500);
+        box-shadow: 0 14px 34px rgba(35, 67, 61, 0.12);
+      }
+
+      .post-expand {
+        margin-top: 16px;
+        padding-top: 16px;
+        border-top: 1px solid var(--mint-100);
+      }
+
+      .post-expand-header {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--mint-700);
+        margin-bottom: 12px;
+      }
+
+      .post-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+      }
+
+      .btn-secondary,
+      .btn-danger,
+      .btn-submit {
+        border: none;
+        border-radius: 999px;
+        padding: 10px 14px;
+        font-weight: 700;
+      }
+
+      .btn-secondary {
+        background: var(--mint-50);
+        color: var(--ink-700);
+      }
+
+      .btn-danger {
+        background: #ffe7e7;
+        color: #bf3d3d;
+      }
+
+      .btn-submit {
+        background: var(--mint-500);
+        color: white;
+      }
+
+      .edit-panel {
+        display: grid;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+
+      .edit-panel input,
+      .edit-panel textarea,
+      .edit-panel select {
+        width: 100%;
+        border: 1px solid var(--mint-200);
+        border-radius: 14px;
+        padding: 12px 14px;
+        font-size: 1rem;
+        color: var(--ink-700);
+      }
+
+      .edit-panel textarea {
+        min-height: 90px;
+        resize: vertical;
+      }
+
+      .comment-section {
+        margin-top: 12px;
+        padding-top: 10px;
+        border-top: 1px solid var(--mint-100);
+      }
+
+      .comment-title {
+        font-weight: 700;
+        margin-bottom: 10px;
+        color: var(--mint-700);
+      }
+
+      .comment-list {
+        display: grid;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+
+      .comment-item {
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: var(--mint-50);
+      }
+
+      .comment-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.9rem;
+        color: var(--ink-500);
+        margin-bottom: 6px;
+      }
+
+      .comment-actions {
+        display: flex;
+        gap: 8px;
+      }
+
+      .comment-actions button {
+        border: none;
+        background: transparent;
+        color: var(--mint-700);
+        font-weight: 700;
+        padding: 0;
+      }
+
+      .comment-form {
+        display: grid;
+        gap: 8px;
+      }
+
+      .comment-form input,
+      .comment-form textarea {
+        width: 100%;
+        border: 1px solid var(--mint-200);
+        border-radius: 12px;
+        padding: 10px 12px;
+        font-size: 0.95rem;
+        color: var(--ink-700);
+      }
+
+      .comment-form textarea {
+        min-height: 70px;
+        resize: vertical;
+      }
     </style>
   </head>
 
@@ -354,13 +492,81 @@
             조건에 맞는 게시물이 없습니다.
           </div>
 
-          <div class="post-card" v-for="post in filteredPosts" :key="post.id">
+          <div
+            class="post-card"
+            v-for="post in filteredPosts"
+            :key="post.id"
+            :class="{ 'is-active': activePostId === post.id }"
+            @click="togglePost(post.id)"
+          >
             <h3>{{ post.title }}</h3>
             <p>{{ post.content }}</p>
             <div class="post-meta">
               <span class="meta-pill">{{ post.categoryLabel }}</span>
               <span class="meta-pill">{{ post.author }}</span>
               <span class="meta-pill">{{ post.date }}</span>
+            </div>
+
+            <div v-if="activePostId === post.id" class="post-expand" @click.stop>
+              <div class="post-expand-header">게시글 수정 · 삭제 / 댓글</div>
+
+              <div v-if="editingPostId === post.id" class="edit-panel">
+                <select v-model="editDraft.category">
+                  <option value="tour">관광지</option>
+                  <option value="culture">문화시설</option>
+                  <option value="festival">축제공연행사</option>
+                  <option value="course">여행코스</option>
+                  <option value="leports">레포츠</option>
+                  <option value="stay">숙박</option>
+                  <option value="shopping">쇼핑</option>
+                  <option value="food">음식점</option>
+                </select>
+                <input type="text" v-model="editDraft.title" placeholder="제목" />
+                <textarea v-model="editDraft.content" placeholder="내용"></textarea>
+                <input type="password" v-model="editDraft.password" placeholder="비밀번호" />
+                <div class="post-actions">
+                  <button class="btn-secondary" @click.stop="cancelEdit">취소</button>
+                  <button class="btn-submit" @click.stop="saveEdit(post)">수정 완료</button>
+                </div>
+              </div>
+
+              <div v-else class="post-actions">
+                <button class="btn-secondary" @click.stop="startEdit(post)">수정</button>
+                <button class="btn-danger" @click.stop="deletePost(post)">삭제</button>
+              </div>
+
+              <div class="comment-section">
+                <div class="comment-title">댓글 ({{ getComments(post.id).length }})</div>
+
+                <div v-if="getComments(post.id).length" class="comment-list">
+                  <div class="comment-item" v-for="comment in getComments(post.id)" :key="comment.id">
+                    <div class="comment-meta">
+                      <span>{{ comment.name }} · {{ comment.date }}</span>
+                      <div class="comment-actions">
+                        <button @click.stop="startCommentEdit(comment)">수정</button>
+                        <button @click.stop="deleteComment(post.id, comment.id)">삭제</button>
+                      </div>
+                    </div>
+                    <div v-if="editingCommentId === comment.id">
+                      <textarea v-model="commentDraft.content" placeholder="댓글 내용을 수정하세요"></textarea>
+                      <input type="password" v-model="commentDraft.password" placeholder="비밀번호" />
+                      <div class="post-actions" style="margin-top: 8px;">
+                        <button class="btn-secondary" @click.stop="cancelCommentEdit">취소</button>
+                        <button class="btn-submit" @click.stop="saveCommentEdit(post.id)">저장</button>
+                      </div>
+                    </div>
+                    <div v-else>{{ comment.content }}</div>
+                  </div>
+                </div>
+                <div v-else class="meta-pill" style="margin-bottom: 10px;">아직 댓글이 없습니다.</div>
+
+                <div class="comment-form">
+                  <input v-model="commentDraft.name" placeholder="닉네임" />
+                  <textarea v-model="commentDraft.content" placeholder="댓글을 입력하세요"></textarea>
+                  <input type="password" v-model="commentDraft.password" placeholder="비밀번호" />
+                  <button class="btn-submit" @click.stop="addComment(post.id)">댓글 등록</button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -373,7 +579,6 @@
 
   const API_BASE_URL = "https://ssafy.onrender.com";
 
-  // 백엔드 category_id -> 프론트 탭 값 매핑
   const CATEGORY_MAP = {
     1: { key: "tour", name: "관광지" },
     2: { key: "food", name: "음식점" },
@@ -383,6 +588,17 @@
     6: { key: "culture", name: "문화시설" },
     7: { key: "leports", name: "레포츠" },
     8: { key: "course", name: "여행코스" }
+  };
+
+  const CATEGORY_ID_MAP = {
+    tour: 1,
+    food: 2,
+    festival: 3,
+    stay: 4,
+    shopping: 5,
+    culture: 6,
+    leports: 7,
+    course: 8
   };
 
   function toFrontendPost(post) {
@@ -411,7 +627,22 @@
           content: "",
           password: ""
         },
-        posts: []
+        posts: [],
+        activePostId: null,
+        editingPostId: null,
+        editDraft: {
+          title: "",
+          content: "",
+          category: "tour",
+          password: ""
+        },
+        commentsByPost: {},
+        editingCommentId: null,
+        commentDraft: {
+          name: "익명",
+          content: "",
+          password: ""
+        }
       };
     },
     async mounted() {
@@ -433,89 +664,276 @@
     },
     methods: {
       async fetchPosts() {
-  try {
-    const response = await fetch(`${API_BASE_URL}/posts/`);
-    if (!response.ok) throw new Error("서버 응답 오류");
+        try {
+          const response = await fetch(`${API_BASE_URL}/posts/`);
+          if (!response.ok) throw new Error("서버 응답 오류");
 
-    const data = await response.json();
-    const postsRaw = Array.isArray(data) ? data : (data.posts || data.results || []);
+          const data = await response.json();
+          const postsRaw = Array.isArray(data) ? data : (data.posts || data.results || []);
 
-    // 최신순 정렬: created_at이 있으면 날짜 기준, 없으면 id 기준
-    postsRaw.sort((a, b) => {
-      if (a.created_at && b.created_at) return new Date(b.created_at) - new Date(a.created_at);
-      if (a.id && b.id) return b.id - a.id;
-      return 0;
-    });
+          postsRaw.sort((a, b) => {
+            if (a.created_at && b.created_at) return new Date(b.created_at) - new Date(a.created_at);
+            if (a.id && b.id) return b.id - a.id;
+            return 0;
+          });
 
-    this.posts = postsRaw.map(toFrontendPost);
-    console.log("게시판 목록 동기화 완료");
-  } catch (error) {
-    console.warn("게시판 로드 실패. 더미 데이터를 사용합니다.", error);
-    this.setFallbackData();
-  }
-},
+          this.posts = postsRaw.map(toFrontendPost);
+          this.posts.forEach((post) => {
+            if (!this.commentsByPost[post.id]) {
+              this.commentsByPost[post.id] = this.loadCommentsForPost(post.id);
+            }
+          });
+        } catch (error) {
+          console.warn("게시판 로드 실패. 더미 데이터를 사용합니다.", error);
+          this.setFallbackData();
+        }
+      },
+
+      loadCommentsForPost(postId) {
+        try {
+          const raw = localStorage.getItem(`comments_${postId}`);
+          const parsed = raw ? JSON.parse(raw) : [];
+          return Array.isArray(parsed) ? parsed : [];
+        } catch (error) {
+          return [];
+        }
+      },
+
+      saveCommentsForPost(postId) {
+        localStorage.setItem(`comments_${postId}`, JSON.stringify(this.commentsByPost[postId] || []));
+      },
+
+      getComments(postId) {
+        return this.commentsByPost[postId] || [];
+      },
+
+      togglePost(postId) {
+        if (this.activePostId === postId) {
+          this.activePostId = null;
+          this.editingPostId = null;
+          this.editingCommentId = null;
+          return;
+        }
+
+        this.activePostId = postId;
+        this.editingPostId = null;
+        this.editingCommentId = null;
+        this.commentDraft = { name: "익명", content: "", password: "" };
+      },
+
+      startEdit(post) {
+        this.editingPostId = post.id;
+        this.editDraft = {
+          title: post.title,
+          content: post.content,
+          category: post.category,
+          password: ""
+        };
+      },
+
+      cancelEdit() {
+        this.editingPostId = null;
+        this.editDraft = { title: "", content: "", category: "tour", password: "" };
+      },
+
+      async saveEdit(post) {
+        if (!this.editDraft.title.trim() || !this.editDraft.content.trim()) {
+          alert("제목과 내용을 모두 입력해주세요.");
+          return;
+        }
+        if (!this.editDraft.password.trim()) {
+          alert("비밀번호를 입력해주세요.");
+          return;
+        }
+
+        try {
+          const response = await fetch(`${API_BASE_URL}/posts/${post.id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              title: this.editDraft.title,
+              content: this.editDraft.content,
+              password: this.editDraft.password,
+              category_id: CATEGORY_ID_MAP[this.editDraft.category]
+            })
+          });
+
+          if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(errData.detail || "수정 실패");
+          }
+
+          const updated = await response.json();
+          const index = this.posts.findIndex((item) => item.id === post.id);
+          if (index !== -1) {
+            this.posts.splice(index, 1, toFrontendPost(updated));
+          }
+          this.editingPostId = null;
+          alert("게시글이 수정되었습니다.");
+        } catch (error) {
+          alert(error.message || "수정에 실패했습니다.");
+        }
+      },
+
+      async deletePost(post) {
+        const password = prompt("게시글 삭제 비밀번호를 입력하세요.");
+        if (!password) return;
+
+        try {
+          const response = await fetch(`${API_BASE_URL}/posts/${post.id}?password=${encodeURIComponent(password)}`, {
+            method: "DELETE"
+          });
+
+          if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(errData.detail || "삭제 실패");
+          }
+
+          this.posts = this.posts.filter((item) => item.id !== post.id);
+          delete this.commentsByPost[post.id];
+          localStorage.removeItem(`comments_${post.id}`);
+          this.activePostId = null;
+          alert("게시글이 삭제되었습니다.");
+        } catch (error) {
+          alert(error.message || "삭제에 실패했습니다.");
+        }
+      },
+
+      addComment(postId) {
+        const content = this.commentDraft.content.trim();
+        if (!content) {
+          alert("댓글 내용을 입력해주세요.");
+          return;
+        }
+        if (!this.commentDraft.password.trim()) {
+          alert("댓글 비밀번호를 입력해주세요.");
+          return;
+        }
+
+        const item = {
+          id: Date.now(),
+          name: this.commentDraft.name.trim() || "익명",
+          password: this.commentDraft.password.trim(),
+          content,
+          date: new Date().toLocaleString(),
+          createdAt: Date.now()
+        };
+
+        if (!this.commentsByPost[postId]) {
+          this.commentsByPost[postId] = [];
+        }
+
+        this.commentsByPost[postId].unshift(item);
+        this.saveCommentsForPost(postId);
+        this.commentDraft = { name: "익명", content: "", password: "" };
+      },
+
+      startCommentEdit(comment) {
+        this.editingCommentId = comment.id;
+        this.commentDraft = {
+          name: comment.name,
+          content: comment.content,
+          password: ""
+        };
+      },
+
+      cancelCommentEdit() {
+        this.editingCommentId = null;
+        this.commentDraft = { name: "익명", content: "", password: "" };
+      },
+
+      saveCommentEdit(postId) {
+        const comment = (this.commentsByPost[postId] || []).find((item) => item.id === this.editingCommentId);
+        if (!comment) return;
+
+        if (!this.commentDraft.password.trim()) {
+          alert("비밀번호를 입력해주세요.");
+          return;
+        }
+        if (this.commentDraft.password.trim() !== comment.password) {
+          alert("비밀번호가 일치하지 않습니다.");
+          return;
+        }
+
+        comment.content = this.commentDraft.content.trim() || comment.content;
+        comment.date = new Date().toLocaleString();
+        this.saveCommentsForPost(postId);
+        this.editingCommentId = null;
+        this.commentDraft = { name: "익명", content: "", password: "" };
+      },
+
+      deleteComment(postId, commentId) {
+        const comment = (this.commentsByPost[postId] || []).find((item) => item.id === commentId);
+        if (!comment) return;
+
+        const password = prompt("댓글 삭제 비밀번호를 입력하세요.");
+        if (!password) return;
+        if (password !== comment.password) {
+          alert("비밀번호가 일치하지 않습니다.");
+          return;
+        }
+
+        this.commentsByPost[postId] = (this.commentsByPost[postId] || []).filter((item) => item.id !== commentId);
+        this.saveCommentsForPost(postId);
+      },
 
       async submitPost() {
-  if (!this.newPost.title.trim() || !this.newPost.content.trim()) {
-    alert("제목과 내용을 모두 입력해주세요.");
-    return;
-  }
-  if (!this.newPost.password.trim()) {
-    alert("수정/삭제를 위해 비밀번호를 입력해주세요.");
-    return;
-  }
+        if (!this.newPost.title.trim() || !this.newPost.content.trim()) {
+          alert("제목과 내용을 모두 입력해주세요.");
+          return;
+        }
+        if (!this.newPost.password.trim()) {
+          alert("수정/삭제를 위해 비밀번호를 입력해주세요.");
+          return;
+        }
 
-  const categoryIdMap = {
-    tour: 1, food: 2, festival: 3, stay: 4, shopping: 5, culture: 6, leports: 7, course: 8
-  };
-  const categoryId = categoryIdMap[this.newPost.category];
+        const categoryId = CATEGORY_ID_MAP[this.newPost.category];
+        const payload = {
+          title: this.newPost.title,
+          content: this.newPost.content,
+          password: this.newPost.password,
+          category_id: categoryId
+        };
 
-  const payload = {
-    title: this.newPost.title,
-    content: this.newPost.content,
-    password: this.newPost.password,
-    category_id: categoryId
-  };
+        try {
+          const response = await fetch(`${API_BASE_URL}/posts/`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
 
-  try {
-    const response = await fetch(`${API_BASE_URL}/posts/`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
+          if (response.ok) {
+            let created = null;
+            try { created = await response.json(); } catch (e) {}
 
-    if (response.ok) {
-      // 서버가 생성한 게시물을 반환하면 이를 맨 위로 추가
-      let created = null;
-      try { created = await response.json(); } catch (e) { /* ignore */ }
+            if (created && created.id) {
+              this.posts.unshift(toFrontendPost(created));
+              this.commentsByPost[created.id] = [];
+            } else {
+              await this.fetchPosts();
+            }
 
-      if (created && created.id) {
-        this.posts.unshift(toFrontendPost(created));
-      } else {
-        // 반환값이 없으면 전체 재조회(정렬로 최신이 위에 오게 됨)
-        await this.fetchPosts();
-      }
-
-      alert("게시물이 성공적으로 등록되었습니다!");
-      this.toggleWrite();
-    } else {
-      const errData = await response.json();
-      alert("게시물 등록에 실패했습니다: " + (errData.detail || "알 수 없는 오류"));
-    }
-  } catch (error) {
-    console.warn("서버가 꺼져있어 화면에만 임시로 등록합니다.", error);
-    this.posts.unshift({
-      id: Date.now(),
-      category: this.newPost.category,
-      categoryLabel: CATEGORY_MAP[categoryId]?.name || "기타",
-      title: this.newPost.title,
-      content: this.newPost.content,
-      author: "익명(임시)",
-      date: "방금 전"
-    });
-    this.toggleWrite();
-  }
-},
+            alert("게시물이 성공적으로 등록되었습니다!");
+            this.toggleWrite();
+          } else {
+            const errData = await response.json();
+            alert("게시물 등록에 실패했습니다: " + (errData.detail || "알 수 없는 오류"));
+          }
+        } catch (error) {
+          console.warn("서버가 꺼져있어 화면에만 임시로 등록합니다.", error);
+          this.posts.unshift({
+            id: Date.now(),
+            category: this.newPost.category,
+            categoryLabel: CATEGORY_MAP[categoryId]?.name || "기타",
+            title: this.newPost.title,
+            content: this.newPost.content,
+            author: "익명(임시)",
+            date: "방금 전"
+          });
+          this.commentsByPost[this.posts[0].id] = [];
+          this.toggleWrite();
+        }
+      },
 
       selectTab(tab) {
         this.activeTab = tab;
@@ -540,6 +958,7 @@
             date: "2026. 7. 14"
           }
         ];
+        this.commentsByPost[1] = [];
       }
     }
   }).mount("#app");
