@@ -31,10 +31,6 @@ app.include_router(chatbot_router)
 
 @app.get("/")
 def root():
-    return {"message": "구미·경북권 여행 정보 API"}
-
-@app.get("/")
-def root():
     return RedirectResponse(url="/Front_end.html")
 
 @app.get("/{page_name}.html")
