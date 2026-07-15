@@ -337,7 +337,7 @@
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script>
       const { createApp } = Vue;
-      const API_BASE_URL = "https://ssafy.onrender.com";
+      const API_BASE_URL = window.location.origin;
 
       createApp({
         data() {
@@ -354,40 +354,53 @@
             if (!response.ok) throw new Error("서버에서 올바른 응답을 받지 못했습니다.");
 
             const data = await response.json();
-            const items = Array.isArray(data) ? data : data.items || [];
+            const items = Array.isArray(data) ? data : (data.items || data.results || []);
+
             this.results = items.map((location) => ({
               id:
-                location.contentid ??
                 location.id ??
+                location.contentid ??
                 location.location_id ??
                 location._id ??
                 Math.random().toString(36).slice(2, 10),
-              title: location.title ?? location.name ?? "제목 없음",
+
+              title: location.name ?? location.title ?? "제목 없음",
+
               description:
-                location.overview ??
                 location.description ??
+                location.overview ??
+                location.address ??
                 location.addr1 ??
                 location.addr2 ??
                 "상세 설명이 없습니다.",
+
               image:
+                location.image_url ??
                 location.firstimage ??
                 location.firstimage2 ??
                 location.image ??
                 location.thumbnail ??
                 "",
-              category: this.mapCategoryToEng(location.contenttypeid ?? location.cat1 ?? location.category_name),
+
+              category: this.mapCategoryToEng(
+                location.category_name ?? location.contenttypeid ?? location.cat1 ?? ""
+              ),
+
               categoryLabel:
                 location.category_name ??
-                this.mapContentTypeId(location.contenttypeid) ??
+                this.mapContentTypeId(location.contenttypeid ?? location.cat1) ??
                 "기타",
-              location: location.addr1 ?? location.address ?? location.addr2 ?? "주소 정보 없음",
+
+              location:
+                location.address ?? location.addr1 ?? location.addr2 ?? "주소 정보 없음",
+
               tel: location.tel ?? "",
               zipcode: location.zipcode ?? "",
               mapx: location.mapx ?? location.lng ?? location.lon ?? "",
               mapy: location.mapy ?? location.lat ?? ""
             }));
 
-            console.log("지역정보 백엔드 데이터 연동 성공!");
+            console.log("지역정보 백엔드 데이터 연동 성공!", data);
           } catch (error) {
             console.warn("백엔드 연동에 실패하여 더미 데이터를 표시합니다.", error);
             this.setFallbackDummyData();
