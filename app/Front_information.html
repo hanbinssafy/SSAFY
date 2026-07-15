@@ -297,7 +297,7 @@
               :key="item.id"
             >
               <template v-if="item.image">
-                <img :src="item.image" :alt="item.title" />
+                <img :src="item.image" :alt="item.title" @error="item.image = ''" />
               </template>
 
               <div>
@@ -374,13 +374,7 @@
                 location.addr2 ??
                 "상세 설명이 없습니다.",
 
-              image:
-                location.image_url ??
-                location.firstimage ??
-                location.firstimage2 ??
-                location.image ??
-                location.thumbnail ??
-                "",
+              image: this.getImageUrl(location),
 
               category: this.mapCategoryToEng(
                 location.category_name ?? location.contenttypeid ?? location.cat1 ?? ""
@@ -447,6 +441,46 @@
               39: "food"
             };
             return map[value] || "all";
+          },
+          getImageUrl(location) {
+            const candidates = [
+              location.image_url,
+              location.imageUrl,
+              location.imageurl,
+              location.image,
+              location.firstimage,
+              location.firstimage2,
+              location.thumbnail,
+              location.imgUrl,
+              location.img_url,
+            ];
+
+            for (const candidate of candidates) {
+              if (typeof candidate === "string") {
+                const value = candidate.trim();
+                if (!value) continue;
+
+                if (value.startsWith("//")) {
+                  return `https:${value}`;
+                }
+
+                if (value.startsWith("http://")) {
+                  return value.replace("http://", "https://");
+                }
+
+                if (!value.startsWith("http://") && !value.startsWith("https://")) {
+                  try {
+                    return new URL(value, window.location.origin).href;
+                  } catch (error) {
+                    return "";
+                  }
+                }
+
+                return value;
+              }
+            }
+
+            return "";
           },
           mapContentTypeId(typeId) {
             const map = {
