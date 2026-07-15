@@ -268,7 +268,7 @@
     async mounted() {
       try {
         // 원격 백엔드로 변경
-        const response = await fetch("https://backendserver-tuvk.onrender.com/locations/");
+        const response = await fetch("https://ssafy.onrender.com/locations/");
 
         if (response.ok) {
           const data = await response.json();
